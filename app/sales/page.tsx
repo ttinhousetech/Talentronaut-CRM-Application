@@ -16,6 +16,7 @@ import {
     Phone,
     RefreshCw,
     Users,
+    ExternalLink,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -122,21 +123,39 @@ export default function SalesDashboardPage() {
                 ) : (
                     <div className="divide-y divide-gray-50">
                         {data.todayMeetings?.map((m: any) => (
-                            <div key={m._id} className="px-7 py-4 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
+                            <div key={m._id} className="px-7 py-4 flex items-start justify-between gap-4">
+                                <div className="flex items-start gap-3 flex-1 min-w-0">
                                     <div className="h-9 w-9 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
                                         <CalendarCheck className="h-4 w-4 text-purple-600" />
                                     </div>
-                                    <div>
+                                    <div className="flex-1 pr-4">
                                         <p className="text-sm font-bold text-gray-900">{m.title}</p>
-                                        {m.notes && <p className="text-xs text-gray-500 font-medium line-clamp-1 mt-0.5">{m.notes}</p>}
-                                        <p className="text-xs text-gray-400 font-medium mt-0.5">with {m.leadName}</p>
+                                        <p className="text-xs text-gray-400 font-medium mt-0.5 mb-1">with {m.leadName}</p>
+                                        {m.notes && (
+                                            <div className="mt-2 bg-gray-50/50 rounded-lg p-2.5 border border-gray-100/50">
+                                                <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                                    {m.notes}
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-xs font-black text-purple-600">
+                                <div className="text-right flex flex-col items-end gap-2.5 shrink-0">
+                                    <p className="text-xs font-black text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg">
                                         {new Date(m.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                                     </p>
+                                    {m.link && (
+                                        <a
+                                            href={m.link.startsWith('http') ? m.link : `https://${m.link}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-bold hover:bg-purple-700 transition-colors shadow-sm cursor-pointer"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            Join Meeting
+                                            <ExternalLink className="h-3.5 w-3.5" />
+                                        </a>
+                                    )}
                                 </div>
                             </div>
                         ))}
