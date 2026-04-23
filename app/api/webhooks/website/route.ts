@@ -11,6 +11,31 @@ const SERVICES: Record<string, { label: string; subdomainName: string }> = {
     'bespoke-solution': { label: 'Bespoke Solution', subdomainName: 'Bespoke Solution' },
 };
 
+// Build a reverse lookup: display name → slug (case-insensitive)
+const SERVICE_NAME_TO_SLUG: Record<string, string> = Object.entries(SERVICES).reduce(
+    (acc, [slug, { label }]) => {
+        acc[label.toLowerCase()] = slug;
+        return acc;
+    },
+    {} as Record<string, string>
+);
+
+/**
+ * Resolve service config from either:
+ *   - slug  e.g. "technical-solutions"
+ *   - name  e.g. "Technical Solutions"
+ */
+function resolveService(service?: string, serviceName?: string) {
+    const bySlug = service ? SERVICES[service.trim().toLowerCase()] : undefined;
+    if (bySlug) return { slug: service!.trim().toLowerCase(), config: bySlug };
+
+    const nameKey = (serviceName || service || '').trim().toLowerCase();
+    const slug = SERVICE_NAME_TO_SLUG[nameKey];
+    if (slug) return { slug, config: SERVICES[slug] };
+
+    return null;
+}
+
 const CORS_HEADERS = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -27,6 +52,7 @@ export async function POST(req: Request) {
 
         const {
             service,
+            serviceName,   // display name e.g. "Technical Solutions"
             fullName,
             firstName,
             lastName,
@@ -38,17 +64,18 @@ export async function POST(req: Request) {
             message,
         } = body;
 
-        // Validate service
-        const serviceConfig = SERVICES[service as string];
-        if (!serviceConfig) {
+        // Resolve service from slug OR display name
+        const resolved = resolveService(service, serviceName);
+        if (!resolved) {
             return NextResponse.json(
                 {
                     success: false,
-                    error: `Invalid service. Must be one of: ${Object.keys(SERVICES).join(', ')}`,
+                    error: `Invalid service. Accepted slugs: ${Object.keys(SERVICES).join(', ')}. Accepted names: ${Object.values(SERVICES).map((s) => s.label).join(', ')}.`,
                 },
                 { status: 400, headers: CORS_HEADERS }
             );
         }
+        const { slug: serviceSlug, config: serviceConfig } = resolved;
 
         // Validate required fields
         if (!email) {
@@ -67,10 +94,11 @@ export async function POST(req: Request) {
 
         const phoneNumber = phone || mobile || undefined;
 
-        // Build details — capture all extra fields the developer might send
+        // Build details — store service info + all extra fields the developer sends
         const details: Record<string, unknown> = {
-            service,
-            serviceLabel: serviceConfig.label,
+            service: serviceSlug,
+            serviceName: serviceConfig.label,   // stored as "serviceName" for display
+            serviceLabel: serviceConfig.label,  // kept for backwards compat
         };
         if (company) details.company = company;
         if (projectRequirements) details.projectRequirements = projectRequirements;
@@ -84,7 +112,7 @@ export async function POST(req: Request) {
             phone: phoneNumber,
             sourceType: 'Website',
             sourceUrl: 'https://www.talentronaut.in',
-            formId: `talentronaut-website-${service}`,
+            formId: `talentronaut-website-${serviceSlug}`,
             formName: `${serviceConfig.label} Form`,
             appName: 'talentronaut-website',
             // Explicit taxonomy — bypasses routing rules
@@ -105,7 +133,8 @@ export async function POST(req: Request) {
                     : 'Existing lead updated successfully.',
                 leadId: result.lead._id,
                 created: result.created,
-                service,
+                service: serviceSlug,
+                serviceName: serviceConfig.label,
             },
             { status: result.created ? 201 : 200, headers: CORS_HEADERS }
         );
