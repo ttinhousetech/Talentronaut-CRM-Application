@@ -11,26 +11,66 @@ import User from '@/models/User';
 
 const DEFAULT_TAXONOMY = {
     projectName: 'Talentronaut',
-    domainName: 'External Campaigns',
+    domainName: 'Website Leads',
     subdomainName: 'Website Forms',
     campaignName: 'Inbound Forms',
     sourceName: 'External Website',
-};
-
-const BUDGET_CAMPAIGN_TAXONOMY = {
-    projectName: 'Talentronaut',
-    domainName: 'Budget Calculator',
-    subdomainName: 'Project Budget Report',
-    campaignName: 'Budget Campaign',
-    sourceName: 'campaign.talentronaut.in',
 };
 
 const VALID_SOURCE_TYPES = ['Website', 'Meta', 'Manual', 'Other'] as const;
 type SourceType = typeof VALID_SOURCE_TYPES[number];
 
 type FormDetails = Record<string, unknown>;
+type Taxonomy = typeof DEFAULT_TAXONOMY;
+
+const ROUTING_RULES: Array<{
+    matches: (context: { formId: string; sourceUrl: string; hostname: string; productName: string }) => boolean;
+    taxonomy: Taxonomy;
+}> = [
+    {
+        matches: ({ formId, hostname, productName }) =>
+            formId.includes('budget') ||
+            productName.includes('budget') ||
+            hostname === 'campaign.talentronaut.in',
+        taxonomy: {
+            projectName: 'Talentronaut',
+            domainName: 'Budget App',
+            subdomainName: 'Lead Forms',
+            campaignName: 'Budget Campaign',
+            sourceName: 'Project Report Modal',
+        },
+    },
+    {
+        matches: ({ formId, sourceUrl, hostname }) =>
+            formId.includes('contact') &&
+            (hostname === 'talentronaut.in' ||
+                hostname === 'www.talentronaut.in' ||
+                sourceUrl.includes('talentronaut')),
+        taxonomy: {
+            projectName: 'Talentronaut',
+            domainName: 'Talentronaut Website',
+            subdomainName: 'Contact Forms',
+            campaignName: 'Contact Us',
+            sourceName: 'Main Website Contact Form',
+        },
+    },
+    {
+        matches: ({ sourceUrl, hostname, productName }) =>
+            productName.includes('linksus') ||
+            hostname.includes('linksus') ||
+            sourceUrl.includes('linksus'),
+        taxonomy: {
+            projectName: 'LinksUs',
+            domainName: 'LinksUs Website',
+            subdomainName: 'Contact Forms',
+            campaignName: 'Contact Us',
+            sourceName: 'LinksUs Contact Form',
+        },
+    },
+];
 
 export interface LeadIngestionPayload {
+    appName?: string;
     formId?: string;
     formName?: string;
     fullName?: string;
@@ -58,6 +98,25 @@ function normalizeEmail(email: string) {
     return email.trim().toLowerCase();
 }
 
+function getHostname(sourceUrl: string) {
+    try {
+        return new URL(sourceUrl).hostname.toLowerCase().replace(/^www\./, '');
+    } catch {
+        return '';
+    }
+}
+
+function toTitleCase(value: string) {
+    return value
+        .replace(/^www\./, '')
+        .replace(/\.[a-z]{2,}(\.[a-z]{2,})?$/i, '')
+        .replace(/[-_.]+/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+}
+
 function splitName(payload: LeadIngestionPayload) {
     const firstName = cleanString(payload.firstName);
     const lastName = cleanString(payload.lastName);
@@ -77,10 +136,17 @@ function splitName(payload: LeadIngestionPayload) {
 function getTaxonomy(payload: LeadIngestionPayload) {
     const formId = cleanString(payload.formId).toLowerCase();
     const sourceUrl = cleanString(payload.sourceUrl).toLowerCase();
-    const base =
-        formId === 'budget-campaign' || sourceUrl.includes('campaign.talentronaut.in')
-            ? BUDGET_CAMPAIGN_TAXONOMY
-            : DEFAULT_TAXONOMY;
+    const productName = (cleanString(payload.appName) || cleanString(payload.formName)).toLowerCase();
+    const hostname = getHostname(sourceUrl);
+    const matchedRule = ROUTING_RULES.find((rule) => rule.matches({ formId, sourceUrl, hostname, productName }));
+    const derivedName = cleanString(payload.appName) || cleanString(payload.formName) || toTitleCase(hostname);
+
+    const base = matchedRule?.taxonomy || {
+        ...DEFAULT_TAXONOMY,
+        domainName: derivedName ? `${derivedName} Leads` : DEFAULT_TAXONOMY.domainName,
+        campaignName: cleanString(payload.formName) || DEFAULT_TAXONOMY.campaignName,
+        sourceName: hostname || DEFAULT_TAXONOMY.sourceName,
+    };
 
     return {
         projectName: cleanString(payload.projectName) || base.projectName,
