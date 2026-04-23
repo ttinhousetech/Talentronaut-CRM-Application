@@ -8,6 +8,7 @@ import {
     FolderTree,
     LogOut,
     Settings2,
+    Calculator,
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 
@@ -17,6 +18,7 @@ const overviewItems = [
 
 const workItems = [
     { name: 'Projects', href: '/admin/configuration', icon: FolderTree },
+    { name: 'Budget App Leads', href: '/admin/budget-app-leads', icon: Calculator },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
