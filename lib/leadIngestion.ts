@@ -275,7 +275,9 @@ export async function ingestExternalLead(payload: LeadIngestionPayload) {
     const source = await findOrCreateSource(taxonomy.sourceName, campaign._id, sourceType);
     const note = buildSubmissionNote(payload);
 
-    const existingLead = await Lead.findOne({ email });
+    // Deduplicate by email + source so the same person submitting to a
+    // different service creates a separate lead instead of overwriting.
+    const existingLead = await Lead.findOne({ email, source: source._id });
     if (existingLead) {
         existingLead.set({
             phone: cleanString(payload.phone) || existingLead.phone,
