@@ -7,13 +7,33 @@ import Subdomain from '@/models/Subdomain';
 import Domain from '@/models/Domain';
 import '@/models/User';
 
-const BUDGET_DOMAIN_NAME = 'Talentronaut-budget-application-leads';
+const BUDGET_APP_NAME = 'Budget App';
+const BUDGET_FORM_ID = 'budget-campaign';
+const BUDGET_FORM_NAME = 'Budget Campaign Report Modal';
 
 export async function GET() {
     try {
         await dbConnect();
 
-        const domain = await Domain.findOne({ name: BUDGET_DOMAIN_NAME });
+        // Budget leads are written with explicit payload fields, so query those
+        // first instead of depending on a brittle folder-name lookup.
+        const directLeads = await Lead.find({
+            $or: [
+                { 'details.appName': BUDGET_APP_NAME },
+                { 'details.formId': BUDGET_FORM_ID },
+                { 'details.formName': BUDGET_FORM_NAME },
+            ],
+        })
+            .populate('assignedTo', 'name email')
+            .populate('source', 'name')
+            .sort({ createdAt: -1 });
+
+        if (directLeads.length > 0) {
+            return NextResponse.json({ leads: directLeads, total: directLeads.length });
+        }
+
+        // Fallback for any older leads that may only exist through taxonomy.
+        const domain = await Domain.findOne({ name: 'Budget App' });
         if (!domain) {
             return NextResponse.json({ leads: [], total: 0 });
         }
@@ -27,19 +47,18 @@ export async function GET() {
             subdomain: { $in: subdomains.map((s) => s._id) },
         }).select('_id');
 
-        if (campaigns.length === 0) {
-            return NextResponse.json({ leads: [], total: 0 });
-        }
-
         const sources = await Source.find({
             campaign: { $in: campaigns.map((c) => c._id) },
         }).select('_id');
 
-        if (sources.length === 0) {
-            return NextResponse.json({ leads: [], total: 0 });
-        }
-
-        const query = { source: { $in: sources.map((s) => s._id) } };
+        const query = sources.length > 0
+            ? {
+                $or: [
+                    { source: { $in: sources.map((s) => s._id) } },
+                    { 'details.appName': BUDGET_APP_NAME },
+                ],
+            }
+            : { 'details.appName': BUDGET_APP_NAME };
 
         const leads = await Lead.find(query)
             .populate('assignedTo', 'name email')

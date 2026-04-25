@@ -90,7 +90,7 @@ export default function AdminLeadDetailPage() {
 
     const fetchUsers = async () => {
         if (!isAdmin) return;
-        const res = await fetch('/api/admin/users');
+        const res = await fetch('/api/admin/users?toolId=crm');
         const data = await res.json();
         setUsers(data.users || []);
     };
@@ -296,7 +296,11 @@ export default function AdminLeadDetailPage() {
                                         className="mt-1 w-full rounded-xl border border-gray-100 bg-gray-50 px-4 py-2.5 text-sm font-bold text-gray-900 focus:border-primary focus:bg-white focus:outline-none transition-all"
                                     >
                                         <option value="">Unassigned</option>
-                                        {users.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
+                                        {users.map(u => (
+                                            <option key={u._id} value={u._id}>
+                                                {u.name} ({u.email})
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div className="flex gap-3 pt-2">

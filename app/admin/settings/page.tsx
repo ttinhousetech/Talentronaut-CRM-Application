@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { AlertTriangle, Database, Link2, ShieldCheck } from 'lucide-react';
 
-const cards = [
+const envCards = [
     {
         title: 'CRM Database',
         description: 'The CRM reads from a single MongoDB connection defined by MONGODB_URI.',
@@ -41,7 +41,7 @@ export default function AdminSettingsPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">
-                {cards.map((card) => (
+                {envCards.map((card) => (
                     <div key={card.title} className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm">
                         <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                             <card.icon className="h-5 w-5" />
@@ -57,7 +57,7 @@ export default function AdminSettingsPage() {
                 <ul className="mt-4 space-y-3 text-sm text-gray-600">
                     <li>• Confirm the budget app is posting to the CRM webhook URL.</li>
                     <li>• Confirm both deployments use the same MongoDB database if you want shared visibility.</li>
-                    <li>• Confirm the budget app lead payload includes appName: Budget App and formId: budget-campaign.</li>
+                    <li>• Confirm the budget app lead payload includes `appName: Budget App` and `formId: budget-campaign`.</li>
                 </ul>
                 <p className="mt-6 text-xs font-medium text-gray-400">Updated {today}</p>
             </div>

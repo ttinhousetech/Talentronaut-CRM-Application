@@ -218,7 +218,7 @@ export default function BudgetAppLeadsPage() {
                                     return (
                                         <tr
                                             key={lead._id}
-                                            onClick={() => router.push(`/admin/leads/${lead._id}?domain=Talentronaut-budget-application-leads&campaign=Budget+Campaign`)}
+                                            onClick={() => router.push(`/admin/leads/${lead._id}?domain=Budget+App&campaign=Budget+Campaign&source=Project+Report+Modal`)}
                                             className="hover:bg-gray-50/60 cursor-pointer transition-colors"
                                         >
                                             {/* Prospect */}
