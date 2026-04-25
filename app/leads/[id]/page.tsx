@@ -89,7 +89,7 @@ export default function LeadDetailPage() {
 
     const fetchUsers = async () => {
         if (!isAdmin) return;
-        const res = await fetch('/api/admin/users');
+        const res = await fetch('/api/admin/users?toolId=crm');
         const data = await res.json();
         setUsers(data.users || []);
     };
@@ -288,7 +288,9 @@ export default function LeadDetailPage() {
                                     >
                                         <option value="">Unassigned</option>
                                         {users.map(u => (
-                                            <option key={u._id} value={u._id}>{u.name}</option>
+                                            <option key={u._id} value={u._id}>
+                                                {u.name} ({u.email})
+                                            </option>
                                         ))}
                                     </select>
                                 </div>

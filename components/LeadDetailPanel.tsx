@@ -91,7 +91,7 @@ export default function LeadDetailPanel({ leadId, onClose, onDeleted }: Props) {
         setLead(null);
         setEditMode(false);
         fetchLead();
-        fetch('/api/admin/users').then(r => r.json()).then(d => setUsers(d.users || []));
+        fetch('/api/admin/users?toolId=crm').then(r => r.json()).then(d => setUsers(d.users || []));
     }, [leadId, fetchLead, isAdmin]);
 
     useEffect(() => {
@@ -261,7 +261,11 @@ export default function LeadDetailPanel({ leadId, onClose, onDeleted }: Props) {
                                 <select value={editData.assignedTo} onChange={e => setEditData({ ...editData, assignedTo: e.target.value })}
                                     className="mt-1 w-full rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm font-bold text-gray-900 focus:border-primary focus:bg-white focus:outline-none">
                                     <option value="">Unassigned</option>
-                                    {users.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
+                                        {users.map(u => (
+                                            <option key={u._id} value={u._id}>
+                                                {u.name} ({u.email})
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
                             <div className="flex gap-2 pt-1">
