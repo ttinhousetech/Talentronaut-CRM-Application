@@ -5,6 +5,7 @@ import Source from '@/models/Source';
 import Campaign from '@/models/Campaign';
 import Subdomain from '@/models/Subdomain';
 import Domain from '@/models/Domain';
+import '@/models/User';
 
 const WEBSITE_DOMAIN_NAME = 'Talentronaut Website';
 
@@ -50,9 +51,11 @@ export async function GET(req: Request) {
             campaign: { $in: campaigns.map((c) => c._id) },
         }).select('_id');
 
-        const query = sources.length > 0
-            ? { source: { $in: sources.map((s) => s._id) } }
-            : {};
+        if (sources.length === 0) {
+            return NextResponse.json({ leads: [], total: 0, services: SERVICES });
+        }
+
+        const query = { source: { $in: sources.map((s) => s._id) } };
 
         const leads = await Lead.find(query)
             .populate('assignedTo', 'name email')

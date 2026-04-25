@@ -5,6 +5,7 @@ import Source from '@/models/Source';
 import Campaign from '@/models/Campaign';
 import Subdomain from '@/models/Subdomain';
 import Domain from '@/models/Domain';
+import '@/models/User';
 
 const BUDGET_APP_NAME = 'Budget App';
 const BUDGET_FORM_ID = 'budget-campaign';
