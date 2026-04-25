@@ -40,8 +40,8 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-body: var(--font-body), "Plus Jakarta Sans", sans-serif;
-  --font-brand: var(--font-brand), "Playfair Display", serif;
+  --font-body: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-brand: "Georgia", "Times New Roman", serif;
 }
 
 :root {
@@ -194,7 +194,7 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-body);
+  font-family: var(--font-body, "Inter", "Segoe UI", sans-serif);
 }
 
 * {

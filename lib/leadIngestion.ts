@@ -34,10 +34,10 @@ const ROUTING_RULES: Array<{
             hostname === 'campaign.talentronaut.in',
         taxonomy: {
             projectName: 'Talentronaut',
-            domainName: 'Talentronaut-budget-application-leads',
+            domainName: 'Budget App',
             subdomainName: 'Budget Campaign Forms',
             campaignName: 'Budget Campaign',
-            sourceName: 'Project Report Modal',
+            sourceName: 'campaign.talentronaut.in',
         },
     },
     {
