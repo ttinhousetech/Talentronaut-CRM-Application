@@ -3,6 +3,7 @@ import dbConnect from '@/lib/db';
 import Lead from '@/models/Lead';
 import Source from '@/models/Source';
 import '@/models/User';   // register for Lead.populate
+import { assignLeadToSalesPerson } from '@/lib/leadRoutingService';
 
 
 export async function GET(req: Request) {
@@ -37,6 +38,9 @@ export async function POST(req: Request) {
         await dbConnect();
         const body = await req.json();
         const lead = await Lead.create(body);
+        if (!body.assignedTo) {
+            await assignLeadToSalesPerson(lead._id);
+        }
         return NextResponse.json({ lead }, { status: 201 });
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to create lead';

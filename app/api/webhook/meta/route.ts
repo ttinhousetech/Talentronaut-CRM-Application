@@ -8,6 +8,7 @@ import Domain from '@/models/Domain';
 import User from '@/models/User';
 import Notification from '@/models/Notification';
 import { sendEmailNotification } from '@/lib/emailService';
+import { assignLeadToSalesPerson } from '@/lib/leadRoutingService';
 
 // ─── Environment Variables (from .env.local) ───
 const META_VERIFY_TOKEN = process.env.META_VERIFY_TOKEN || '';
@@ -184,6 +185,9 @@ export async function POST(req: Request) {
                 });
 
                 console.log(`✅ Meta lead created: ${lead._id} | ${domainName} → ${campaign_name} → ${sourceName}`);
+
+                // 6.5 Intelligent Auto-Routing
+                await assignLeadToSalesPerson(lead._id);
 
                 // 7. Send Notifications (In-App & Email)
                 try {

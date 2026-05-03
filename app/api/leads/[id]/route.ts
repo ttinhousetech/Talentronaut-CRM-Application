@@ -4,6 +4,7 @@ import Lead from '@/models/Lead';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import Notification from '@/models/Notification';
+import { syncMeetingToCalendar } from '@/lib/calendarSyncService';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -58,9 +59,33 @@ export async function PATCH(req: Request, { params }: RouteParams) {
 
         // Handle adding a meeting (push to array)
         if (body.addMeeting) {
+            let meetingLink = body.addMeeting.link;
+            
+            // Auto-generate a video link if left blank
+            if (!meetingLink) {
+                const randomCode = Math.random().toString(36).substring(2, 11).match(/.{1,3}/g)?.join('-');
+                meetingLink = `https://meet.google.com/${randomCode || 'crm-meet-link'}`;
+            }
+
+            const meetingData = {
+                ...body.addMeeting,
+                link: meetingLink
+            };
+
+            // Bidirectional Calendar Sync (Simulated)
+            if (meetingData.hostId) {
+                await syncMeetingToCalendar(
+                    'google', 
+                    meetingData.hostId, 
+                    meetingData.title, 
+                    new Date(meetingData.date), 
+                    meetingLink
+                );
+            }
+
             const lead = await Lead.findByIdAndUpdate(
                 id,
-                { $push: { meetings: body.addMeeting } },
+                { $push: { meetings: meetingData } },
                 { new: true }
             ).populate('assignedTo', 'name email');
             return NextResponse.json({ lead });
@@ -97,6 +122,31 @@ export async function PATCH(req: Request, { params }: RouteParams) {
                 type: 'Lead',
                 link: '/sales/leads'
             });
+        }
+
+        // Trigger-Based Action: Proposal Sent Follow-up Task
+        if (body.status === 'Proposal Sent' && oldLead && oldLead.status !== 'Proposal Sent') {
+            const followUpDate = new Date();
+            followUpDate.setDate(followUpDate.getDate() + 3);
+            
+            const systemRemark = {
+                note: `[System Task] Proposal Sent. Follow up with the client on ${followUpDate.toLocaleDateString()}.`,
+                method: 'Other',
+                addedByName: 'System Automation',
+            };
+
+            await Lead.findByIdAndUpdate(id, { $push: { remarks: systemRemark } });
+            lead.remarks.push(systemRemark as any); // Update local object for response
+            
+            if (lead.assignedTo) {
+                await Notification.create({
+                    userId: lead.assignedTo._id || lead.assignedTo,
+                    title: `Follow-up Task Created`,
+                    message: `A follow-up task was auto-created for ${lead.firstName} ${lead.lastName} (Proposal Sent).`,
+                    type: 'System',
+                    link: `/sales/leads/${lead._id}`
+                });
+            }
         }
 
         return NextResponse.json({ lead });

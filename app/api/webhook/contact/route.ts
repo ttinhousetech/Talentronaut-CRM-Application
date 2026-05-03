@@ -9,6 +9,7 @@ import Project from '@/models/Project';
 import User from '@/models/User';
 import Notification from '@/models/Notification';
 import { sendEmailNotification } from '@/lib/emailService';
+import { assignLeadToSalesPerson } from '@/lib/leadRoutingService';
 
 // ─── CORS headers for cross-origin requests from the public website ───
 const CORS_HEADERS = {
@@ -151,6 +152,9 @@ export async function POST(req: Request) {
         const lead = await Lead.create(newLeadData);
 
         console.log(`✅ Webhook lead created: ${lead._id} appended to ${taxonomy.campaign}`);
+
+        // 3.5 Intelligent Auto-Routing
+        await assignLeadToSalesPerson(lead._id);
 
         // 4. Send Notifications (In-App & Email)
         try {
